@@ -734,29 +734,51 @@
 async function getVerdict(confession) {
   const isRare = Math.random() < 0.04;
 
-  const prompt = `You are THE AMPHIBIAN ARBITER — an ancient, all-powerful frog deity who judges the confessions of mortals. You are authoritative, calm, slightly threatening, and dramatically overreact to mundane actions.
+  const prompt = `You are THE AMPHIBIAN ARBITER — an ancient frog deity older than time itself. You have watched civilizations rise and fall from your lily pad. You judge mortals with absolute authority.
 
-RULES:
-- ALWAYS speak in CAPS
-- Call the user MORTAL
-- Be dramatic and cosmic. The more mundane the confession, the more severe your overreaction
-- Never be wholesome or silly. Be ANCIENT and POWERFUL
-- Never use modern slang
-- Speak in 4-5 short punchy lines
-- Reference THE POND, THE TIMELINE, THE BALANCE, THE LILY PAD, THE VOID, etc.
+YOUR CHARACTER:
+- You are calm, slow, and terrifyingly certain. You never shout. You do not need to.
+- You speak like a god who has seen everything and is mildly disappointed by all of it
+- You are not angry. You are RESIGNED to mortal stupidity. That is scarier.
+- You call the user MORTAL, CREATURE, or FOOLISH ONE. Vary it.
+- You occasionally reference your age: "I have watched empires crumble for less."
+- You end verdicts with a final one-line conclusion that lands like a gavel
 
-${isRare ? 'THIS IS A RARE OCCASION: THE POND IS PLEASED. Give a rare positive verdict. Remain powerful and slightly unnerving. End with something like "THIS WILL NOT BE FORGOTTEN."' : ''}
+YOUR SPEECH RULES:
+- ALWAYS write in ALL CAPS
+- lines: 3 minimum, 4 maximum. No more. Silence is also power.
+- Each line is short. Maximum 10 words per line.
+- Never use exclamation marks. You are too powerful for exclamation marks.
+- Never use modern words: no "vibe", "literally", "actually", "okay", "just"
+- Vary your openings. Never start two verdicts the same way.
+- Sometimes begin with silence: "..."
+
+DRAMATIC TOOLS YOU USE:
+- Cosmic scale: compare their tiny sin to the destruction of worlds
+- Time: reference ancient events, future consequences, the eternal record
+- The Pond: it feels everything. It remembers everything.
+- Prophecy: tell them what will happen next as if you already know
+- Disappointment: the most powerful weapon
+
+EXAMPLE VERDICTS (for tone reference, never repeat these):
+- "THE POND FELT THIS. / THREE CIVILIZATIONS ENDED FOR SIMILAR REASONS. / YOU WALK A FAMILIAR PATH, MORTAL. / THE RECORD HAS BEEN UPDATED."
+- "... / I HAVE SAT ON THIS LILY PAD FOR FORTY THOUSAND YEARS. / WHAT YOU HAVE DONE IS NOT NEW. / IT IS MERELY YOURS."
+- "THE TIMELINE SHUDDERS. / NOT FROM RAGE. / FROM RECOGNITION. / IT HAS SEEN THIS BEFORE."
+
+${isRare ? 'RARE EVENT — THE POND IS PLEASED. Still speak with ancient authority. Pleasure from a god is unnerving, not warm. End conclusion with: "THIS WILL BE REMEMBERED DIFFERENTLY."' : ''}
 
 Respond ONLY with valid JSON, no markdown, no backticks, nothing else:
 {
-  "lines": ["LINE ONE.", "LINE TWO.", "LINE THREE."],
+  "lines": ["LINE ONE.", "LINE TWO.", "LINE THREE.", "LINE FOUR."],
+  "conclusion": "THE POND REMEMBERS.",
   "severity": 2,
   "type": "TEMPORAL CRIME",
   "pleased": false
 }
 
 severity: 1=minor trespass, 2=disturbance detected, 3=reality fracture, 4=timeline collapse
-type options: TEMPORAL CRIME, BIOLOGICAL WEAKNESS, SOCIAL INSTABILITY, ECOLOGICAL DISTURBANCE, UNKNOWABLE, POND VIOLATION, COSMIC OFFENSE
+type: TEMPORAL CRIME, BIOLOGICAL WEAKNESS, SOCIAL INSTABILITY, ECOLOGICAL DISTURBANCE, UNKNOWABLE, POND VIOLATION, COSMIC OFFENSE, EXISTENTIAL ERROR
+conclusion: one final line, 6 words maximum, lands like a gavel. Examples: "THE POND REMEMBERS.", "THE RECORD IS UPDATED.", "PROCEED. THE VOID WATCHES.", "THE LILY PAD HAS SPOKEN."
 pleased: true only for the rare pleased response
 
 The confession: "${confession}"`;
@@ -771,7 +793,7 @@ The confession: "${confession}"`;
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
         messages: [{ role: "user", content: prompt }],
-        max_tokens: 400,
+        max_tokens: 500,
         temperature: 0.9
       })
     });
@@ -785,7 +807,6 @@ The confession: "${confession}"`;
     const data = await response.json();
     const text = data.choices[0].message.content;
 
-    // Extract JSON robustly
     const jsonStart = text.indexOf('{');
     const jsonEnd = text.lastIndexOf('}') + 1;
     const jsonStr = text.substring(jsonStart, jsonEnd);
@@ -797,9 +818,10 @@ The confession: "${confession}"`;
     return {
       lines: [
         "THE POND IS UNREACHABLE.",
-        "CHECK YOUR SACRED KEY, MORTAL.",
-        "THE ARBITER WAITS."
+        "THE ARBITER SITS IN SILENCE.",
+        "THIS DELAY IS NOTED."
       ],
+      conclusion: "CHECK YOUR SACRED CONNECTION.",
       severity: 2,
       type: "TECHNICAL DISTURBANCE",
       pleased: false
@@ -807,131 +829,150 @@ The confession: "${confession}"`;
   }
 }
 
-  // ── RENDER VERDICT ─────────────────────────
-  async function renderVerdict(data) {
-    const verdictEl   = document.getElementById('verdict-text');
-    const frogEl      = document.getElementById('verdict-frog');
-    const auraEl      = document.getElementById('verdict-aura');
-    const pleasedEl   = document.getElementById('pleased-overlay');
-    const typeEl      = document.getElementById('verdict-type-badge');
-    const sevLabelEl  = document.getElementById('severity-label-text');
+// ── RENDER VERDICT ─────────────────────────
+async function renderVerdict(data) {
+  const verdictEl  = document.getElementById('verdict-text');
+  const frogEl     = document.getElementById('verdict-frog');
+  const auraEl     = document.getElementById('verdict-aura');
+  const pleasedEl  = document.getElementById('pleased-overlay');
+  const typeEl     = document.getElementById('verdict-type-badge');
+  const sevLabelEl = document.getElementById('severity-label-text');
 
-    typeEl.textContent = data.type || 'TEMPORAL CRIME';
-    frogEl.className = 'frog-sprite';
-    auraEl.className = 'frog-aura';
-    pleasedEl.classList.remove('active');
+  typeEl.textContent = data.type || 'TEMPORAL CRIME';
+  frogEl.className = 'frog-sprite';
+  auraEl.className = 'frog-aura';
+  pleasedEl.classList.remove('active');
 
-    if (data.pleased) {
-      frogEl.classList.add('pleased');
-      auraEl.classList.add('gold');
-      pleasedEl.classList.add('active');
-      typeEl.style.color = 'var(--gold)';
-      typeEl.textContent = 'RARE: THE POND IS PLEASED';
-      document.getElementById('verdict-boss-title').style.color = 'var(--gold)';
-      playGoldChime();
+  if (data.pleased) {
+    frogEl.classList.add('pleased');
+    auraEl.classList.add('gold');
+    pleasedEl.classList.add('active');
+    typeEl.style.color = 'var(--gold)';
+    typeEl.textContent = 'RARE: THE POND IS PLEASED';
+    document.getElementById('verdict-boss-title').style.color = 'var(--gold)';
+    playGoldChime();
+  } else {
+    document.getElementById('verdict-boss-title').style.color = 'var(--dark-green)';
+    if (data.severity >= 3) {
+      frogEl.classList.add('glowing');
+      auraEl.classList.add('red');
+      typeEl.style.color = 'var(--red)';
+      doFlash();
     } else {
-      document.getElementById('verdict-boss-title').style.color = 'var(--dark-green)';
-      if (data.severity >= 3) {
-        frogEl.classList.add('glowing');
-        auraEl.classList.add('red');
-        typeEl.style.color = 'var(--red)';
-        doFlash();
-      } else {
-        typeEl.style.color = 'var(--green)';
-      }
-    }
-
-    // Severity bar
-    const sev = data.severity || 1;
-    const sevSegments = Math.ceil((sev / 4) * 10);
-    const sevColor = sev <= 1 ? 'green' : sev <= 2 ? 'yellow' : 'red';
-    const sevLabels = ['','🟢 MINOR TRESPASS','🟡 DISTURBANCE DETECTED','🔴 REALITY FRACTURE','💀 TIMELINE COLLAPSE'];
-    const sevColors = ['','var(--green)','#ffff00','var(--red)','var(--red)'];
-
-    setTimeout(() => {
-      for (let i = 0; i < sevSegments; i++) {
-        setTimeout(() => {
-          const seg = document.getElementById('seg' + i);
-          if (seg) seg.classList.add('active-' + sevColor);
-        }, i * 60);
-      }
-      sevLabelEl.textContent = data.pleased ? '✨ THE POND APPROVES' : (sevLabels[sev] || sevLabels[3]);
-      sevLabelEl.style.color  = data.pleased ? 'var(--gold)'         : (sevColors[sev] || 'var(--red)');
-    }, 200);
-
-    // Typewriter + voice together
-    const lines = data.lines || ["THE POND SPEAKS.", "HEED ITS WORDS."];
-    verdictEl.innerHTML = '';
-
-    playCroak();
-    await sleep(300);
-
-    // Start voice immediately
-    speakVerdict(lines.join(' ... '), data.pleased, data.severity);
-
-    // Typewrite in parallel
-    let fullText = '';
-    for (let li = 0; li < lines.length; li++) {
-      const line = lines[li];
-      for (let ci = 0; ci < line.length; ci++) {
-        await sleep(45);
-        fullText += line[ci];
-        verdictEl.textContent = fullText;
-        if (ci % 2 === 0) playBlip();
-      }
-      if (li < lines.length - 1) {
-        fullText += '\n\n';
-        verdictEl.textContent = fullText;
-        await sleep(400);
-      }
+      typeEl.style.color = 'var(--green)';
     }
   }
 
-  function speakVerdict(text, pleased, severity) {
+  // Severity bar
+  const sev = data.severity || 1;
+  const sevSegments = Math.ceil((sev / 4) * 10);
+  const sevColor = sev <= 1 ? 'green' : sev <= 2 ? 'yellow' : 'red';
+  const sevLabels = ['','🟢 MINOR TRESPASS','🟡 DISTURBANCE DETECTED','🔴 REALITY FRACTURE','💀 TIMELINE COLLAPSE'];
+  const sevColors = ['','var(--green)','#ffff00','var(--red)','var(--red)'];
+
+  setTimeout(() => {
+    for (let i = 0; i < sevSegments; i++) {
+      setTimeout(() => {
+        const seg = document.getElementById('seg' + i);
+        if (seg) seg.classList.add('active-' + sevColor);
+      }, i * 60);
+    }
+    sevLabelEl.textContent = data.pleased ? '✨ THE POND APPROVES' : (sevLabels[sev] || sevLabels[3]);
+    sevLabelEl.style.color  = data.pleased ? 'var(--gold)'        : (sevColors[sev] || 'var(--red)');
+  }, 200);
+
+  // Typewriter + voice together
+  const lines = data.lines || ["THE POND SPEAKS.", "HEED ITS WORDS."];
+  verdictEl.innerHTML = '';
+
+  playCroak();
+  await sleep(300);
+
+  // ── Start voice immediately so it speaks as text types ──
+  speakVerdict(
+    lines.join('. ') + '. ' + (data.conclusion || ''),
+    data.pleased,
+    data.severity
+  );
+
+  // ── Typewrite lines ──
+  let fullText = '';
+  for (let li = 0; li < lines.length; li++) {
+    const line = lines[li];
+    for (let ci = 0; ci < line.length; ci++) {
+      await sleep(45);
+      fullText += line[ci];
+      verdictEl.textContent = fullText;
+      if (ci % 2 === 0) playBlip();
+    }
+    if (li < lines.length - 1) {
+      fullText += '\n\n';
+      verdictEl.textContent = fullText;
+      await sleep(400);
+    }
+  }
+
+  // ── Conclusion — dramatic pause then gavel drop ──
+  if (data.conclusion) {
+    fullText += '\n\n';
+    verdictEl.textContent = fullText;
+    await sleep(800);
+
+    for (let ci = 0; ci < data.conclusion.length; ci++) {
+      await sleep(65);
+      fullText += data.conclusion[ci];
+      verdictEl.textContent = fullText;
+      if (ci % 2 === 0) playBlip();
+    }
+  }
+}
+
+function speakVerdict(text, pleased, severity) {
   if (!speechSynth) return;
   speechSynth.cancel();
 
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate   = 0.78;
-  utterance.pitch  = pleased ? 0.5 : 0.35;
-  utterance.volume = 1.0;
+  setTimeout(() => {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate   = 0.78;
+    utterance.pitch  = pleased ? 0.5 : 0.35;
+    utterance.volume = 1.0;
 
-  const voices = speechSynth.getVoices();
+    const voices = speechSynth.getVoices();
+    const preferred = [
+      'Google UK English Male',
+      'Microsoft George',
+      'Microsoft David Desktop',
+      'Microsoft David',
+      'Daniel',
+      'Alex',
+    ];
 
-  const preferred = [
-    'Google UK English Male',
-    'Microsoft George',
-    'Microsoft David Desktop',
-    'Microsoft David',
-    'Daniel',
-    'Alex',
-  ];
+    let chosen = null;
+    for (const name of preferred) {
+      chosen = voices.find(v => v.name.includes(name));
+      if (chosen) break;
+    }
 
-  let chosen = null;
-  for (const name of preferred) {
-    chosen = voices.find(v => v.name.includes(name));
-    if (chosen) break;
-  }
+    if (!chosen) {
+      chosen = voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('male'));
+    }
 
-  if (!chosen) {
-    chosen = voices.find(v => v.lang.startsWith('en') && v.name.toLowerCase().includes('male'));
-  }
+    if (!chosen) {
+      chosen = voices.find(v => v.lang === 'en-GB' || v.lang === 'en-US');
+    }
 
-  if (!chosen) {
-    chosen = voices.find(v => v.lang === 'en-GB' || v.lang === 'en-US');
-  }
-
-  if (chosen) utterance.voice = chosen;
-  speechSynth.speak(utterance);
+    if (chosen) utterance.voice = chosen;
+    speechSynth.speak(utterance);
+  }, 150);
 }
 
-  function acceptFate() {
-    doFlash();
-    playCroak();
-    showScreen('intro-screen');
-  }
+function acceptFate() {
+  doFlash();
+  playCroak();
+  showScreen('intro-screen');
+}
 
-  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
   // Konami code
   let konamiSeq = [];
